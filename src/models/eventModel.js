@@ -1,14 +1,23 @@
 const Joi = require("joi");
 
-const Event = {
-  name: "",
-  description: "",
-  longDescription: "",
-  creationDate: "",
-  user: {},
-  roleId: 0,
-  address: {},
-};
+class Event {
+  constructor(
+    name,
+    description,
+    longDescription,
+    creationDate,
+    user,
+    roleId,
+    address
+  ) {
+    this.id = guid();
+    this.name = name;
+    this.description = description;
+    this.longDescription = longDescription;
+    this.creationDate = creationDate;
+    this.user = user;
+  }
+}
 
 const eventSchema = Joi.object({
   name: Joi.string().required(),
