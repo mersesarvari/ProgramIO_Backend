@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { eventSchema } = require("../models/eventModel.js");
-const { create, getAll, remove, update, getOne } = require("../firebase");
+const { create, getAll, remove, update, getOne } = require("../firebase.js");
 
 const events = [];
 

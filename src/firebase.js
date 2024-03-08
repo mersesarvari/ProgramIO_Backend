@@ -30,8 +30,9 @@ const create = async (url, data) => {
     return;
   }
   console.log("Modify called");
-  const dataRef = database.collection(url).doc(guid()).set(data);
-  return dataRef;
+  const dataRef = await database.collection(url).doc(guid()).set(data);
+  console.log(dataRef);
+  return data;
 };
 const update = async (url, documentId, updatedData) => {
   //Error handling
@@ -67,29 +68,9 @@ const getAll = async (url) => {
   return responseArr;
 };
 const getOne = async (url, id) => {
-  console.log("getOne called");
   const dataRef = database.collection(url).doc(id);
   const response = await dataRef.get();
   return response.data();
-};
-
-const login = async (email, password) => {
-  console.log("login called:", email, password);
-
-  const users = await getAll("/user"); // Assuming "/user" is the path to your user collection
-  console.log("users", users);
-  // Check if there is a user with the provided email and password
-  const user = await users.find(
-    (user) => user.email === email.email && user.password === email.password
-  );
-
-  if (user) {
-    console.log("Login successful");
-    return user;
-  } else {
-    console.log("Invalid email or password");
-    throw new Error("Invalid email or password");
-  }
 };
 
 module.exports = {
@@ -98,5 +79,5 @@ module.exports = {
   getOne,
   remove,
   update,
-  login,
+  database,
 };
