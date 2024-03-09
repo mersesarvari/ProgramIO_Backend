@@ -1,10 +1,18 @@
 import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import User, { IUser } from "../models/userModel";
+import { authenticateToken } from "./auth";
+
+const MinimumRole = 3;
 
 // Create
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", authenticateToken, async (req: Request, res: Response) => {
   try {
+    if (req.user.role < MinimumRole) {
+      return res
+        .status(403)
+        .json({ message: "You dont have the permission to access this" });
+    }
     const user: IUser = new User({
       username: req.body.username,
       email: req.body.email,
@@ -19,8 +27,13 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 // Get ALL
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", authenticateToken, async (req: Request, res: Response) => {
   try {
+    if (req.user.role < MinimumRole) {
+      return res
+        .status(403)
+        .json({ message: "You dont have the permission to access this" });
+    }
     const objects = await User.find();
     res.json(objects);
   } catch (error) {
@@ -29,36 +42,67 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 // GET ONE
-router.get("/:id", getObject, async (req: Request, res: Response) => {
-  res.send(res.locals.object);
-});
+router.get(
+  "/:id",
+  getObject,
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    if (req.user.role < MinimumRole) {
+      return res
+        .status(403)
+        .json({ message: "You dont have the permission to access this" });
+    }
+    res.send(res.locals.object);
+  }
+);
 
 // UPDATE
-router.patch("/:id", getObject, async (req: Request, res: Response) => {
-  try {
-    if (req.body.username !== null) {
-      res.locals.object.username = req.body.username;
-    }
-    if (req.body.password !== null) {
-      res.locals.object.password = req.body.password;
-    }
+router.patch(
+  "/:id",
+  getObject,
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      //Checking admin role
+      if (req.user.role < MinimumRole) {
+        return res
+          .status(403)
+          .json({ message: "You dont have the permission to access this" });
+      }
+      if (req.body.username !== null) {
+        res.locals.object.username = req.body.username;
+      }
+      if (req.body.password !== null) {
+        res.locals.object.password = req.body.password;
+      }
 
-    const updatedObject = await res.locals.object.save();
-    res.json(updatedObject);
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
+      const updatedObject = await res.locals.object.save();
+      res.json(updatedObject);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
   }
-});
+);
 
 // DELETE
-router.delete("/:id", getObject, async (req: Request, res: Response) => {
-  try {
-    await res.locals.object.deleteOne();
-    res.json({ message: "Deleted user!" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+router.delete(
+  "/:id",
+  getObject,
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      if (req.user.role < MinimumRole) {
+        return res
+          .status(403)
+          .json({ message: "You dont have the permission to access this" });
+      }
+      await res.locals.object.deleteOne();
+      res.json({ message: "Deleted user!" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 async function getObject(req: Request, res: Response, next: NextFunction) {
   try {

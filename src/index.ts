@@ -6,6 +6,7 @@ import user from "./routes/user";
 import auth from "./routes/auth";
 import address from "./routes/address";
 import mongoose from "mongoose";
+
 require("dotenv").config();
 
 //MongoDB configuration

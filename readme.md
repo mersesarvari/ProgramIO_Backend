@@ -21,7 +21,7 @@ The ProgramIO backend is a `Node JS` server for an event manager application. Cu
 - NodeJS
 - MongoDB
 
-### Installing the application
+### Installing
 
 1. Install MongoDB
 2. Install NodeJS
