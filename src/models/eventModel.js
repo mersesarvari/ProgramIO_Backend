@@ -1,29 +1,12 @@
-const Joi = require("joi");
+const mongoose = require("mongoose");
 
-class Event {
-  constructor(
-    name,
-    description,
-    longDescription,
-    creationDate,
-    user,
-    roleId,
-    address
-  ) {
-    this.id = guid();
-    this.name = name;
-    this.description = description;
-    this.longDescription = longDescription;
-    this.creationDate = creationDate;
-    this.user = user;
-  }
-}
-
-const eventSchema = Joi.object({
-  name: Joi.string().required(),
-  description: Joi.string().required(),
-  longDescription: Joi.string().required(),
-  ownerId: Joi.string().required(),
+const eventShema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  longDescription: { type: String, required: true },
+  creationDate: { type: String, required: true, default: Date.now() },
+  userId: { type: String, required: true },
+  addressId: { type: String, required: true },
 });
 
-module.exports = { Event, eventSchema };
+module.exports = mongoose.model("Events", eventShema);

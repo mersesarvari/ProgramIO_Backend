@@ -1,26 +1,29 @@
 const express = require("express");
 const cors = require("cors");
 const Joi = require("joi");
-const eventApi = require("./Endpoints/eventAPI");
-const authApi = require("./Endpoints/authAPI");
-const { database } = require("./firebase.js");
+const event = require("./routes/event.js");
+const user = require("./routes/user.js");
+const auth = require("./routes/auth.js");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
+//MongoDB configuration
+console.log("MongoURL", process.env.MONGODB_URL);
+mongoose.connect(process.env.MONGODB_URL);
+const mongoDB = mongoose.connection;
+mongoDB.on("error", (error) => console.error(error));
+mongoDB.once("open", () => console.error("Connected to database"));
+
+//Express configuration
 const app = express();
-const PORT = 3000;
 
-//Applying JSON middleware
 app.use(express.json());
-//app.use(cors);
+app.use("/event", event);
+app.use("/user", user);
+app.use("/auth", auth);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
-app.use("/event", eventApi);
-app.use("/auth", authApi);
-
-app.post("/event", (req, res) => {
-  return res.send(req.body);
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on ${process.env.URL}:${process.env.PORT}`);
 });
 
 module.exports = { app };
