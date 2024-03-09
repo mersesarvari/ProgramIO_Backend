@@ -57,35 +57,50 @@ router.post("/login", async (req: Request, res: Response) => {
     }
     //Authentication
     console.log("User signed:", user.toObject());
-    const accessToken = jwt.sign(
-      user.toObject(),
-      process.env.ACCESS_TOKEN_SECTER
-    );
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    //Adding refreshToken to the user
+    user.refreshTokens.push(refreshToken);
+    await user.save();
+
     //Retrieving the user login informations
-    res
-      .status(200)
-      .json({ message: "Login successful", user, accessToken: accessToken });
+    res.status(200).json({
+      message: "Login successful",
+      user,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-router.post("/test", authenticateToken, async (req: Request, res: Response) => {
-  try {
-    if (req.role === 0) {
-      return res.status(403).json({ message: "You are a pussy" });
-    }
-    if (req.role === 3) {
-      return res
-        .status(403)
-        .json({ message: "You are the god of this world!" });
-    }
-
-    res.status(200).json({ message: "Test successful", user: req.user });
-  } catch (error) {
-    return res.status(400).json({ message: error.message });
-  }
+router.post("/token", async (req: Request, res: Response) => {
+  const refreshToken = req.body.token;
 });
+
+function generateAccessToken(user) {
+  let userForToken = CleanUserDataForToken(user);
+  return jwt.sign(userForToken, process.env.ACCESS_TOKEN_SECTER, {
+    expiresIn: "15s",
+  });
+}
+
+function generateRefreshToken(user) {
+  let userForToken = CleanUserDataForToken(user);
+  return jwt.sign(userForToken, process.env.REFRESH_TOKEN_SECRET);
+}
+
+function CleanUserDataForToken(user: IUser) {
+  const userObjectForToken = {
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    acticated: user.activated,
+  };
+  return userObjectForToken;
+}
 
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];

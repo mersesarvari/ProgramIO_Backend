@@ -1,2 +1,5 @@
 Basics: https://www.youtube.com/watch?v=SccSCuHhOw0
 Typescirpt and api basics: https://www.youtube.com/watch?v=b8ZUb_Okxro
+
+
+JWT & Authentication: https://www.youtube.com/watch?v=mbsmsi7l3r4&t=2s

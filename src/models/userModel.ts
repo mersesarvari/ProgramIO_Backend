@@ -10,6 +10,7 @@ export interface IUser extends Document {
   activationDate?: string;
   activated: boolean;
   role: number;
+  refreshTokens: String[];
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -31,6 +32,7 @@ const userSchema = new mongoose.Schema<IUser>({
     required: true,
     default: new Date().toISOString(),
   },
+  refreshTokens: [],
   activationDate: { type: String, required: false },
   activated: { type: Boolean, required: true, default: false },
   role: { type: Number, required: true, default: 0 },
