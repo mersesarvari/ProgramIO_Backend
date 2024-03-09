@@ -1,10 +1,10 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const User = require("../models/userModel.js");
-const {
+import User from "../models/userModel";
+import {
   registerValudationSchema,
   loginValidationSchema,
-} = require("../validations/auth.js");
+} from "../validations/auth";
 
 // Register
 router.post("/register", async (req, res) => {
@@ -58,4 +58,4 @@ router.post("/login", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

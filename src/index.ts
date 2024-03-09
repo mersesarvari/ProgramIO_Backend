@@ -1,10 +1,10 @@
-const express = require("express");
-const cors = require("cors");
-const Joi = require("joi");
-const event = require("./routes/event.js");
-const user = require("./routes/user.js");
-const auth = require("./routes/auth.js");
-const mongoose = require("mongoose");
+import express from "express";
+import cors from "cors";
+import Joi from "joi";
+import event from "./routes/event";
+import user from "./routes/user";
+import auth from "./routes/auth";
+import mongoose from "mongoose";
 require("dotenv").config();
 
 //MongoDB configuration
@@ -26,4 +26,4 @@ app.listen(process.env.PORT, () => {
   console.log(`Server running on ${process.env.URL}:${process.env.PORT}`);
 });
 
-module.exports = { app };
+export default app;

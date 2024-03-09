@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { eventSchema } = require("../models/eventModel.js");
-const Event = require("../models/eventModel.js");
+import eventSchema from "../models/eventModel";
+import Event from "../models/eventModel";
 
 //Create
 router.post("/", async (req, res) => {
@@ -85,4 +85,4 @@ async function getEvent(req, res, next) {
   next();
 }
 
-module.exports = router;
+export default router;

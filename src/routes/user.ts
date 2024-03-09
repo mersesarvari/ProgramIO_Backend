@@ -1,9 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const { userSchema } = require("../models/userModel.js");
-const User = require("../models/userModel.js");
+import userSchema from "../models/userModel";
+import User from "../models/userModel";
 
-//Create
+// Create
 router.post("/", async (req, res) => {
   try {
     const user = new User({
@@ -12,13 +12,14 @@ router.post("/", async (req, res) => {
       password: req.body.password,
     });
     const newUser = await user.save();
-    //201 is the create code
+    // 201 is the create code
     res.status(201).json(newUser);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
-//Get ALL
+
+// Get ALL
 router.get("/", async (req, res) => {
   try {
     const objects = await User.find();
@@ -27,11 +28,13 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-//GET ONE
+
+// GET ONE
 router.get("/:id", getObject, async (req, res) => {
   res.send(res.object);
 });
-//UPDATE
+
+// UPDATE
 router.patch("/:id", getObject, async (req, res) => {
   try {
     if (req.body.username !== null) {
@@ -47,7 +50,8 @@ router.patch("/:id", getObject, async (req, res) => {
     return res.status(400).json({ message: error.message });
   }
 });
-//DELETE
+
+// DELETE
 router.delete("/:id", getObject, async (req, res) => {
   try {
     await res.object.deleteOne();
@@ -71,4 +75,4 @@ async function getObject(req, res, next) {
   next();
 }
 
-module.exports = router;
+export default router;

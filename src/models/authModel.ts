@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
+import { Schema, model } from "mongoose";
 
-//Email format check
+// Email format check
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /*
@@ -11,7 +11,7 @@ Is at least 5 characters long.
 */
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{5,}$/;
 
-const registerSchema = new mongoose.Schema({
+const registerSchema = new Schema({
   username: { type: String, required: true },
   email: {
     type: String,
@@ -40,14 +40,14 @@ const registerSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function (value) {
-        return value === this.password; // Check if repeatPassword matches the password
+        return value === this.password; // Check if confirmPassword matches the password
       },
       message: (props) => `Passwords do not match!`,
     },
   },
 });
 
-const loginSchema = new mongoose.Schema({
+const loginSchema = new Schema({
   email: {
     type: String,
     required: true,
@@ -64,7 +64,5 @@ const loginSchema = new mongoose.Schema({
   },
 });
 
-module.exports = {
-  Register: mongoose.model("Register", registerSchema),
-  Login: mongoose.model("Login", loginSchema),
-};
+export const Register = model("Register", registerSchema);
+export const Login = model("Login", loginSchema);
