@@ -4,7 +4,7 @@ const User = require("../models/userModel.js");
 const {
   registerValudationSchema,
   loginValidationSchema,
-} = require("../../validations/auth");
+} = require("../validations/auth.js");
 
 // Register
 router.post("/register", async (req, res) => {
