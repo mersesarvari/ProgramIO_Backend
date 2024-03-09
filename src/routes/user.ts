@@ -1,17 +1,18 @@
 import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import User, { IUser } from "../models/userModel";
-import { authenticateToken } from "./auth";
+import { authenticateToken, CheckRoleRequirement } from "./auth";
 
-const MinimumRole = 3;
+const RoleRequirement = 3;
 
 // Create
 router.post("/", authenticateToken, async (req: Request, res: Response) => {
   try {
-    if (req.user.role < MinimumRole) {
+    //Checking roles
+    if (req.user.role < RoleRequirement) {
       return res
         .status(403)
-        .json({ message: "You dont have the permission to access this" });
+        .json({ message: "You dont have the permission to access this!" });
     }
     const user: IUser = new User({
       username: req.body.username,
@@ -29,10 +30,11 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
 // Get ALL
 router.get("/", authenticateToken, async (req: Request, res: Response) => {
   try {
-    if (req.user.role < MinimumRole) {
+    //Checking roles
+    if (req.user.role < RoleRequirement) {
       return res
         .status(403)
-        .json({ message: "You dont have the permission to access this" });
+        .json({ message: "You dont have the permission to access this!" });
     }
     const objects = await User.find();
     res.json(objects);
@@ -47,10 +49,11 @@ router.get(
   getObject,
   authenticateToken,
   async (req: Request, res: Response) => {
-    if (req.user.role < MinimumRole) {
+    //Checking roles
+    if (req.user.role < RoleRequirement) {
       return res
         .status(403)
-        .json({ message: "You dont have the permission to access this" });
+        .json({ message: "You dont have the permission to access this!" });
     }
     res.send(res.locals.object);
   }
@@ -63,11 +66,11 @@ router.patch(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      //Checking admin role
-      if (req.user.role < MinimumRole) {
+      //Checking roles
+      if (req.user.role < RoleRequirement) {
         return res
           .status(403)
-          .json({ message: "You dont have the permission to access this" });
+          .json({ message: "You dont have the permission to access this!" });
       }
       if (req.body.username !== null) {
         res.locals.object.username = req.body.username;
@@ -91,11 +94,6 @@ router.delete(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      if (req.user.role < MinimumRole) {
-        return res
-          .status(403)
-          .json({ message: "You dont have the permission to access this" });
-      }
       await res.locals.object.deleteOne();
       res.json({ message: "Deleted user!" });
     } catch (error) {

@@ -106,4 +106,11 @@ export function authenticateToken(req, res, next) {
   });
 }
 
+export function CheckRoleRequirement(req, res, requiredRole) {
+  if (req.user.role < requiredRole) {
+    return false;
+  }
+  return true;
+}
+
 export default router;
