@@ -6,6 +6,7 @@ import user from "./routes/user";
 import auth from "./routes/auth";
 import address from "./routes/address";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
 
 require("dotenv").config();
 
@@ -19,6 +20,7 @@ mongoDB.once("open", () => console.error("Connected to database"));
 //Express configuration
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use("/event", event);
 app.use("/user", user);

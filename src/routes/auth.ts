@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 const router = express.Router();
 import { IUser, User } from "../models/userModel";
+import { IRefreshToken, RefreshToken } from "../models/tokenModels";
 import { HashPassword } from "../models/authModel";
 import {
   registerValidationSchema,
@@ -40,12 +41,15 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
+router.post("/protected", authenticateToken, (req, res) => {
+  res.json({ message: "Access granted" });
+});
+
 // Login
 router.post("/login", async (req: Request, res: Response) => {
   try {
     // Validating login fields
     const loginValidation = loginValidationSchema.validate(req.body);
-    console.log(loginValidation);
     if (loginValidation.error) {
       return res.status(400).json({ message: loginValidation.error.message });
     }
@@ -56,6 +60,7 @@ router.post("/login", async (req: Request, res: Response) => {
     });
     //Checking if the user exists with the current email
     if (!user) {
+      console.log("Invalid email or password");
       return res.status(400).json({ message: "Invalid email or password" });
     }
     //Checking if the password is good
@@ -64,6 +69,7 @@ router.post("/login", async (req: Request, res: Response) => {
       user.password
     );
     if (!passwordCheck) {
+      console.log("Invalid email or password by comparing passwords");
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
@@ -71,8 +77,28 @@ router.post("/login", async (req: Request, res: Response) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-    //Adding refreshToken to the user
-    user.refreshTokens.push(refreshToken);
+    //Adding refreshToken to the database
+
+    // Accessing client's IP address
+    const clientIpAddress = req.ip || req.connection.remoteAddress;
+    const clientPort = req.connection.remotePort;
+
+    //Checking if the user has already have a valid refresh-token
+    var validToken = await RefreshToken.findOne({
+      address: clientIpAddress,
+      active: true,
+    });
+
+    //Adding a token if the user has not have one
+    if (!validToken) {
+      validToken = new RefreshToken({
+        value: refreshToken,
+        address: clientIpAddress,
+        port: clientPort,
+      });
+      await validToken.save();
+    }
+
     await user.save();
 
     //Retrieving the user login informations
@@ -80,14 +106,14 @@ router.post("/login", async (req: Request, res: Response) => {
       message: "Login successful",
       user,
       accessToken: accessToken,
-      refreshToken: refreshToken,
+      refreshToken: validToken.value,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-router.post("/token", async (req: Request, res: Response) => {
+router.post("/proba", async (req: Request, res: Response) => {
   const refreshToken = req.body.token;
   //Checking if the refresh token is valid and exists in the server
   if (refreshToken == null) return res.sendStatus(401);
@@ -95,10 +121,45 @@ router.post("/token", async (req: Request, res: Response) => {
   //Checking if the user contains the secret key!
 });
 
+router.get("/token", async (req: Request, res: Response) => {
+  //Extracting the refreshToken from the request
+  const authHeader = req.headers["authorization"];
+  const tokenString = authHeader.toString();
+  const refreshToken = tokenString.replace("Bearer ", "").trim();
+  //Checking if token exists
+  if (refreshToken == null) {
+    console.log("No refresh token provided!");
+    return res.status(400).json({ message: "No refresh token provided!" });
+  }
+  //Checking if the user try to log in from the ip address of the refresh token
+  const clientIpAddress = req.ip || req.connection.remoteAddress;
+  const token = await RefreshToken.findOne({
+    value: refreshToken,
+    active: true,
+    address: clientIpAddress,
+  });
+  if (!token) {
+    console.log("Refresh token not found!");
+    return res.status(401).json({ message: "No refresh token provided!" });
+  }
+  const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  console.log("Decoded refresh token:", decoded);
+  const currentUser = {
+    username: decoded.username,
+    email: decoded.email,
+    role: decoded.role,
+    acticated: decoded.activated,
+  };
+  //Generating new access token
+  const newToken = generateAccessToken(currentUser);
+  console.log("New token generated:", newToken);
+  return res.status(200).json({ accessToken: newToken });
+});
+
 function generateAccessToken(user) {
   let userForToken = CleanUserDataForToken(user);
   return jwt.sign(userForToken, process.env.ACCESS_TOKEN_SECTER, {
-    expiresIn: "15s",
+    expiresIn: "6000s",
   });
 }
 
@@ -120,17 +181,42 @@ function CleanUserDataForToken(user: IUser) {
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
 
-  const tokenString = authHeader.toString();
-  // console.log("tokenString:", tokenString);
-  const token = tokenString.replace("Bearer ", "").trim();
-  //console.log("Token:", token);
+  if (!authHeader) {
+    return res.status(401).send({ message: "No authorization header found" });
+  }
+  const token = authHeader.replace("Bearer ", "");
+  console.log("Token:", "|" + token + "|");
 
-  //if (token == null) return res.sendStatus(401);
-  if (token == null) return res.send({ message: "No token found" });
+  if (!token) {
+    return res.status(401).send({ message: "No token found" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      let errorMessage = "An error occurred while verifying the token.";
 
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECTER, (err, user) => {
-    if (err)
-      return res.status(403).send({ message: "Forbidden", erroMsg: err });
+      // Provide more specific error messages based on error type:
+      switch (err.name) {
+        case "TokenExpiredError":
+          errorMessage = "The token has expired. Please re-authenticate.";
+          break;
+        case "JsonWebTokenError":
+          errorMessage = "The token is malformed or invalid.";
+          break;
+        case "NotBeforeError":
+          errorMessage = "The token is not yet active.";
+          break;
+        default:
+          // Log the full error for further debugging
+          errorMessage =
+            "Unexpected JWT verification error:" + JSON.stringify(err);
+          break;
+      }
+      console.log("JWT verify error: ", errorMessage);
+      return res
+        .status(403)
+        .send({ message: "Forbidden", errorMsg: errorMessage });
+    }
+
     req.user = user;
     next();
   });
