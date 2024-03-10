@@ -149,7 +149,7 @@ router.post("/token", async (req: Request, res: Response) => {
 function generateAccessToken(user) {
   let userForToken = CleanUserDataForToken(user);
   return jwt.sign(userForToken, process.env.ACCESS_TOKEN_SECTER, {
-    expiresIn: "3s",
+    expiresIn: "10m",
   });
 }
 

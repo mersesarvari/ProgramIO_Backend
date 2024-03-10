@@ -3,3 +3,7 @@ Typescirpt and api basics: https://www.youtube.com/watch?v=b8ZUb_Okxro
 
 
 JWT & Authentication: https://www.youtube.com/watch?v=mbsmsi7l3r4&t=2s
+
+
+
+TODO - ROLES: https://www.youtube.com/watch?v=jI4K7L-LI58
