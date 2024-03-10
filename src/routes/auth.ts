@@ -74,7 +74,6 @@ router.post("/login", async (req: Request, res: Response) => {
     }
 
     //Authentication
-
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
     //Adding refreshToken to the database
@@ -143,7 +142,6 @@ router.get("/token", async (req: Request, res: Response) => {
     return res.status(401).json({ message: "No refresh token provided!" });
   }
   const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-  console.log("Decoded refresh token:", decoded);
   const currentUser = {
     username: decoded.username,
     email: decoded.email,
@@ -152,14 +150,13 @@ router.get("/token", async (req: Request, res: Response) => {
   };
   //Generating new access token
   const newToken = generateAccessToken(currentUser);
-  console.log("New token generated:", newToken);
   return res.status(200).json({ accessToken: newToken });
 });
 
 function generateAccessToken(user) {
   let userForToken = CleanUserDataForToken(user);
   return jwt.sign(userForToken, process.env.ACCESS_TOKEN_SECTER, {
-    expiresIn: "6000s",
+    expiresIn: "3s",
   });
 }
 
@@ -185,12 +182,11 @@ export function authenticateToken(req, res, next) {
     return res.status(401).send({ message: "No authorization header found" });
   }
   const token = authHeader.replace("Bearer ", "");
-  console.log("Token:", "|" + token + "|");
 
   if (!token) {
     return res.status(401).send({ message: "No token found" });
   }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECTER, (err, user) => {
     if (err) {
       let errorMessage = "An error occurred while verifying the token.";
 
