@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
-import Event, { IEvent } from "../models/eventModel";
+import { IEvent, Event } from "../models/eventModel";
 
 // Create
 router.post("/", async (req: Request, res: Response) => {

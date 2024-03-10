@@ -1,7 +1,9 @@
 import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
-import User, { IUser } from "../models/userModel";
+import { User, IUser } from "../models/userModel";
+import { HashPassword } from "../models/authModel";
 import { authenticateToken, CheckRoleRequirement } from "./auth";
+import bcrypt from "bcrypt";
 
 const RoleRequirement = 3;
 
@@ -14,10 +16,11 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
         .status(403)
         .json({ message: "You dont have the permission to access this!" });
     }
+
     const user: IUser = new User({
       username: req.body.username,
       email: req.body.email,
-      password: req.body.password,
+      password: await HashPassword(req.body.password),
     });
     const newUser = await user.save();
     // 201 is the create code
@@ -76,7 +79,7 @@ router.patch(
         res.locals.object.username = req.body.username;
       }
       if (req.body.password !== null) {
-        res.locals.object.password = req.body.password;
+        res.locals.object.password = await HashPassword(req.body.password);
       }
 
       const updatedObject = await res.locals.object.save();

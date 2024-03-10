@@ -1,4 +1,5 @@
 import { Schema, model, Document } from "mongoose";
+import bcrypt from "bcrypt";
 
 // Email format check
 const emailRegex: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,5 +78,13 @@ const loginSchema = new Schema<ILogin>({
   },
 });
 
-export const Register = model<IRegister>("Register", registerSchema);
-export const Login = model<ILogin>("Login", loginSchema);
+const HashPassword = async (password: string) => {
+  //Hashing the password
+  const hashedPassword = await bcrypt.hashSync(password, 10);
+  return hashedPassword;
+};
+
+const Register = model<IRegister>("Register", registerSchema);
+const Login = model<ILogin>("Login", loginSchema);
+
+export { HashPassword, Register, Login, ILogin, IRegister };

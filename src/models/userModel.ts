@@ -2,7 +2,7 @@ import mongoose, { Document } from "mongoose";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export interface IUser extends Document {
+interface IUser extends Document {
   username: string;
   email: string;
   password: string;
@@ -40,4 +40,4 @@ const userSchema = new mongoose.Schema<IUser>({
 
 const User = mongoose.model<IUser>("Users", userSchema);
 
-export default User;
+export { User, IUser };

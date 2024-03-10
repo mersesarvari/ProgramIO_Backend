@@ -1,11 +1,13 @@
 import express, { Request, Response } from "express";
 const router = express.Router();
-import User, { IUser } from "../models/userModel";
+import { IUser, User } from "../models/userModel";
+import { HashPassword } from "../models/authModel";
 import {
   registerValidationSchema,
   loginValidationSchema,
 } from "../validations/auth";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 // Register
 router.post("/register", async (req: Request, res: Response) => {
@@ -22,12 +24,13 @@ router.post("/register", async (req: Request, res: Response) => {
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
+
     // Creating the user object for the database
     const user: IUser = new User({
       username: req.body.username,
       email: req.body.email,
-      password: req.body.password,
-      confirmPassword: req.body.confirmPassword,
+      password: await HashPassword(req.body.password),
+      confirmPassword: await HashPassword(req.body.confirmPassword),
     });
     const newUser = await user.save();
     // 201 is the create code
@@ -39,7 +42,6 @@ router.post("/register", async (req: Request, res: Response) => {
 
 // Login
 router.post("/login", async (req: Request, res: Response) => {
-  console.log("Login called:", req.body);
   try {
     // Validating login fields
     const loginValidation = loginValidationSchema.validate(req.body);
@@ -48,15 +50,24 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(400).json({ message: loginValidation.error.message });
     }
     // Checking login information
+
     const user = await User.findOne({
       email: req.body.email,
-      password: req.body.password,
     });
+    //Checking if the user exists with the current email
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
+    //Checking if the password is good
+    const passwordCheck = await bcrypt.compare(
+      req.body.password,
+      user.password
+    );
+    if (!passwordCheck) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
     //Authentication
-    console.log("User signed:", user.toObject());
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -72,12 +83,16 @@ router.post("/login", async (req: Request, res: Response) => {
       refreshToken: refreshToken,
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 
 router.post("/token", async (req: Request, res: Response) => {
   const refreshToken = req.body.token;
+  //Checking if the refresh token is valid and exists in the server
+  if (refreshToken == null) return res.sendStatus(401);
+  if (req.user) return res.sendStatus(401).json({ message: "User not found" });
+  //Checking if the user contains the secret key!
 });
 
 function generateAccessToken(user) {
