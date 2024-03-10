@@ -75,7 +75,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
     //Authentication
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+
     //Adding refreshToken to the database
 
     // Accessing client's IP address
@@ -90,12 +90,16 @@ router.post("/login", async (req: Request, res: Response) => {
 
     //Adding a token if the user has not have one
     if (!validToken) {
+      const refreshToken = generateRefreshToken(user);
       validToken = new RefreshToken({
         value: refreshToken,
         address: clientIpAddress,
         port: clientPort,
       });
       await validToken.save();
+      console.log(
+        "No token found in the database, Generating new refresh token"
+      );
     }
 
     await user.save();
@@ -112,15 +116,7 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/proba", async (req: Request, res: Response) => {
-  const refreshToken = req.body.token;
-  //Checking if the refresh token is valid and exists in the server
-  if (refreshToken == null) return res.sendStatus(401);
-  if (req.user) return res.sendStatus(401).json({ message: "User not found" });
-  //Checking if the user contains the secret key!
-});
-
-router.get("/token", async (req: Request, res: Response) => {
+router.post("/token", async (req: Request, res: Response) => {
   //Extracting the refreshToken from the request
   const authHeader = req.headers["authorization"];
   const tokenString = authHeader.toString();
@@ -130,16 +126,13 @@ router.get("/token", async (req: Request, res: Response) => {
     console.log("No refresh token provided!");
     return res.status(400).json({ message: "No refresh token provided!" });
   }
-  //Checking if the user try to log in from the ip address of the refresh token
-  const clientIpAddress = req.ip || req.connection.remoteAddress;
+
   const token = await RefreshToken.findOne({
     value: refreshToken,
-    active: true,
-    address: clientIpAddress,
   });
   if (!token) {
-    console.log("Refresh token not found!");
-    return res.status(401).json({ message: "No refresh token provided!" });
+    console.log("Refresh token not found!\n", refreshToken);
+    return res.status(400).json({ message: "No refresh token provided!" });
   }
   const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
   const currentUser = {
@@ -179,37 +172,41 @@ export function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
 
   if (!authHeader) {
-    return res.status(401).send({ message: "No authorization header found" });
+    return res.status(400).send({ message: "No authorization header found" });
   }
   const token = authHeader.replace("Bearer ", "");
 
   if (!token) {
-    return res.status(401).send({ message: "No token found" });
+    return res.status(400).send({ message: "No token found" });
   }
   jwt.verify(token, process.env.ACCESS_TOKEN_SECTER, (err, user) => {
     if (err) {
       let errorMessage = "An error occurred while verifying the token.";
-
+      let errorCode;
       // Provide more specific error messages based on error type:
       switch (err.name) {
         case "TokenExpiredError":
           errorMessage = "The token has expired. Please re-authenticate.";
+          errorCode = 403;
           break;
         case "JsonWebTokenError":
           errorMessage = "The token is malformed or invalid.";
+          errorCode = 403;
           break;
         case "NotBeforeError":
           errorMessage = "The token is not yet active.";
+          errorCode = 403;
           break;
         default:
           // Log the full error for further debugging
           errorMessage =
             "Unexpected JWT verification error:" + JSON.stringify(err);
+          errorCode = 400;
           break;
       }
       console.log("JWT verify error: ", errorMessage);
       return res
-        .status(403)
+        .status(499)
         .send({ message: "Forbidden", errorMsg: errorMessage });
     }
 

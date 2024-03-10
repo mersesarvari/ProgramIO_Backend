@@ -20,7 +20,14 @@ mongoDB.once("open", () => console.error("Connected to database"));
 //Express configuration
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"], // Specify the allowed origin
+    methods: ["GET", "POST", "PUT", "DELETE"], // Specify the allowed HTTP methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Specify the allowed headers
+    credentials: true, // Allow credentials (cookies)
+  })
+);
 app.use(express.json());
 app.use("/event", event);
 app.use("/user", user);
