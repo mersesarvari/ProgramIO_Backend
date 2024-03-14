@@ -102,14 +102,29 @@ router.post("/login", async (req: Request, res: Response) => {
       );
     }
 
-    await user.save();
+    // Set the expiration date to a far-future date (e.g., 31 Dec 9999)
+    const farFutureDate = new Date("9999-12-31");
+
+    // Setting access token as a cookie
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: false, // set to true if you're using HTTPS
+      sameSite: "Lax", // adjust as needed for your application
+    });
+
+    // Setting refresh token as a cookie
+    res.cookie("refresh_token", validToken.value, {
+      httpOnly: true,
+      secure: false, // set to true if you're using HTTPS
+      sameSite: "Lax", // adjust as needed for your application
+    });
 
     //Retrieving the user login informations
     res.status(200).json({
       message: "Login successful",
       user,
-      accessToken: accessToken,
-      refreshToken: validToken.value,
+      //accessToken: accessToken,
+      //refreshToken: validToken.value,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -117,11 +132,10 @@ router.post("/login", async (req: Request, res: Response) => {
 });
 
 router.post("/token", async (req: Request, res: Response) => {
-  //Extracting the refreshToken from the request
-  const authHeader = req.headers["authorization"];
-  const tokenString = authHeader.toString();
-  const refreshToken = tokenString.replace("Bearer ", "").trim();
   //Checking if token exists
+  const cookies = req.cookies;
+  console.log("Cookies:", cookies);
+  const refreshToken = req.cookies["refresh_token"];
   if (refreshToken == null) {
     console.log("No refresh token provided!");
     return res.status(400).json({ message: "No refresh token provided!" });
@@ -141,8 +155,16 @@ router.post("/token", async (req: Request, res: Response) => {
     role: decoded.role,
     acticated: decoded.activated,
   };
+
   //Generating new access token
   const newToken = generateAccessToken(currentUser);
+  // Setting access token as a cookie
+  res.cookie("access_token", newToken, {
+    httpOnly: true,
+    secure: false, // set to true if you're using HTTPS
+    sameSite: "Lax", // adjust as needed for your application
+  });
+
   return res.status(200).json({ accessToken: newToken });
 });
 
@@ -169,17 +191,16 @@ function CleanUserDataForToken(user: IUser) {
 }
 
 export function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-
-  if (!authHeader) {
-    return res.status(400).send({ message: "No authorization header found" });
+  //Checking if token exists
+  const cookies = req.cookies;
+  console.log("Cookies:", cookies);
+  const accessToken = req.cookies["access_token"];
+  if (accessToken == null) {
+    console.log("No access token provided!");
+    return res.status(400).json({ message: "No access token provided!" });
   }
-  const token = authHeader.replace("Bearer ", "");
 
-  if (!token) {
-    return res.status(400).send({ message: "No token found" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECTER, (err, user) => {
+  jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECTER, (err, user) => {
     if (err) {
       let errorMessage = "An error occurred while verifying the token.";
       let errorCode;

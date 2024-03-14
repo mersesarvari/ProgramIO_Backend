@@ -20,14 +20,25 @@ mongoDB.once("open", () => console.error("Connected to database"));
 //Express configuration
 const app = express();
 
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Credentials", true);
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
+
 app.use(
   cors({
     origin: ["http://localhost:5173"], // Specify the allowed origin
     methods: ["GET", "POST", "PUT", "DELETE"], // Specify the allowed HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Specify the allowed headers
+    allowedHeaders: ["Content-Type", "Authorization", "SetCookie"], // Specify the allowed headers
     credentials: true, // Allow credentials (cookies)
   })
 );
+app.use(cookieParser());
 app.use(express.json());
 app.use("/event", event);
 app.use("/user", user);
