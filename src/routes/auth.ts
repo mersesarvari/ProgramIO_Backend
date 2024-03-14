@@ -41,7 +41,7 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/protected", authenticateToken, (req, res) => {
+router.post("/protected", Authenticate, (req, res) => {
   res.json({ message: "Access granted" });
 });
 
@@ -167,6 +167,30 @@ router.post("/token", async (req: Request, res: Response) => {
 
   return res.status(200).json({ accessToken: newToken });
 });
+router.post("/logout", Authenticate, async (req: Request, res: Response) => {
+  //Checking if token exists
+  const cookies = req.cookies;
+  const refresh_token = req.cookies["refresh_token"];
+  if (refresh_token == null) {
+    console.log("No refresh token provided!");
+    return res.status(400).json({ message: "No refresh token provided!" });
+  }
+
+  const token = await RefreshToken.findOne({
+    value: refresh_token,
+  });
+  if (!token) {
+    console.log("Refresh token not found!\n", refresh_token);
+    return res.status(400).json({ message: "Refresh token not found!\n" });
+  }
+  const deleteResponse = await RefreshToken.deleteOne({
+    value: refresh_token,
+  });
+
+  return res
+    .status(200)
+    .json({ message: "Succesfull logout!", data: deleteResponse });
+});
 
 function generateAccessToken(user) {
   let userForToken = CleanUserDataForToken(user);
@@ -190,10 +214,9 @@ function CleanUserDataForToken(user: IUser) {
   return userObjectForToken;
 }
 
-export function authenticateToken(req, res, next) {
+export function Authenticate(req, res, next) {
   //Checking if token exists
   const cookies = req.cookies;
-  console.log("Cookies:", cookies);
   const accessToken = req.cookies["access_token"];
   if (accessToken == null) {
     console.log("No access token provided!");
@@ -235,31 +258,6 @@ export function authenticateToken(req, res, next) {
     next();
   });
 }
-
-router.post("/logout", async (req: Request, res: Response) => {
-  //Checking if token exists
-  const cookies = req.cookies;
-  console.log("Cookies:", cookies);
-  const refresh_token = req.cookies["refresh_token"];
-  const access_token = req.cookies["refresh_token"];
-  if (refresh_token == null) {
-    console.log("No refresh token provided!");
-    return res.status(400).json({ message: "No refresh token provided!" });
-  }
-
-  const token = await RefreshToken.findOne({
-    value: refresh_token,
-  });
-  if (!token) {
-    console.log("Refresh token not found!\n", refresh_token);
-    return res.status(400).json({ message: "Refresh token not found!\n" });
-  }
-  const deleteResponse = await RefreshToken.deleteOne({ value: refresh_token });
-
-  return res
-    .status(200)
-    .json({ message: "Succesfull logout!" + deleteResponse });
-});
 
 export function CheckRoleRequirement(req, res, requiredRole) {
   if (req.user.role < requiredRole) {

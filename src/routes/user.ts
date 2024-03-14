@@ -2,13 +2,13 @@ import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import { User, IUser } from "../models/userModel";
 import { HashPassword } from "../models/authModel";
-import { authenticateToken, CheckRoleRequirement } from "./auth";
+import { Authenticate, CheckRoleRequirement } from "./auth";
 import bcrypt from "bcrypt";
 
 const RoleRequirement = 3;
 
 // Create
-router.post("/", authenticateToken, async (req: Request, res: Response) => {
+router.post("/", Authenticate, async (req: Request, res: Response) => {
   try {
     //Checking roles
     if (req.user.role < RoleRequirement) {
@@ -31,7 +31,7 @@ router.post("/", authenticateToken, async (req: Request, res: Response) => {
 });
 
 // Get ALL
-router.get("/", authenticateToken, async (req: Request, res: Response) => {
+router.get("/", Authenticate, async (req: Request, res: Response) => {
   try {
     //Checking roles
     if (req.user.role < RoleRequirement) {
@@ -50,7 +50,7 @@ router.get("/", authenticateToken, async (req: Request, res: Response) => {
 router.get(
   "/:id",
   getObject,
-  authenticateToken,
+  Authenticate,
   async (req: Request, res: Response) => {
     //Checking roles
     if (req.user.role < RoleRequirement) {
@@ -66,7 +66,7 @@ router.get(
 router.patch(
   "/:id",
   getObject,
-  authenticateToken,
+  Authenticate,
   async (req: Request, res: Response) => {
     try {
       //Checking roles
@@ -94,7 +94,7 @@ router.patch(
 router.delete(
   "/:id",
   getObject,
-  authenticateToken,
+  Authenticate,
   async (req: Request, res: Response) => {
     try {
       await res.locals.object.deleteOne();
