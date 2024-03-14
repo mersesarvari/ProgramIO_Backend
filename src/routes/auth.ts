@@ -236,6 +236,31 @@ export function authenticateToken(req, res, next) {
   });
 }
 
+router.post("/logout", async (req: Request, res: Response) => {
+  //Checking if token exists
+  const cookies = req.cookies;
+  console.log("Cookies:", cookies);
+  const refresh_token = req.cookies["refresh_token"];
+  const access_token = req.cookies["refresh_token"];
+  if (refresh_token == null) {
+    console.log("No refresh token provided!");
+    return res.status(400).json({ message: "No refresh token provided!" });
+  }
+
+  const token = await RefreshToken.findOne({
+    value: refresh_token,
+  });
+  if (!token) {
+    console.log("Refresh token not found!\n", refresh_token);
+    return res.status(400).json({ message: "Refresh token not found!\n" });
+  }
+  const deleteResponse = await RefreshToken.deleteOne({ value: refresh_token });
+
+  return res
+    .status(200)
+    .json({ message: "Succesfull logout!" + deleteResponse });
+});
+
 export function CheckRoleRequirement(req, res, requiredRole) {
   if (req.user.role < requiredRole) {
     return false;
