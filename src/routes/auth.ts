@@ -148,24 +148,29 @@ router.post("/token", async (req: Request, res: Response) => {
     console.log("Refresh token not found!\n", refreshToken);
     return res.status(400).json({ message: "No refresh token provided!" });
   }
-  const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-  const currentUser = {
-    username: decoded.username,
-    email: decoded.email,
-    role: decoded.role,
-    acticated: decoded.activated,
-  };
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      console.log(err.message);
+      return res.status(431).json({ message: err.message });
+    }
+    const currentUser = {
+      username: decoded.username,
+      email: decoded.email,
+      role: decoded.role,
+      acticated: decoded.activated,
+    };
 
-  //Generating new access token
-  const newToken = generateAccessToken(currentUser);
-  // Setting access token as a cookie
-  res.cookie("access_token", newToken, {
-    httpOnly: true,
-    secure: false, // set to true if you're using HTTPS
-    sameSite: "Lax", // adjust as needed for your application
+    //Generating new access token
+    const newToken = generateAccessToken(currentUser);
+    // Setting access token as a cookie
+    res.cookie("access_token", newToken, {
+      httpOnly: true,
+      secure: false, // set to true if you're using HTTPS
+      sameSite: "Lax", // adjust as needed for your application
+    });
+
+    return res.status(200).json({ accessToken: newToken });
   });
-
-  return res.status(200).json({ accessToken: newToken });
 });
 router.post("/logout", Authenticate, async (req: Request, res: Response) => {
   //Checking if token exists
@@ -231,15 +236,15 @@ export function Authenticate(req, res, next) {
       switch (err.name) {
         case "TokenExpiredError":
           errorMessage = "The token has expired. Please re-authenticate.";
-          errorCode = 403;
+          errorCode = 430;
           break;
         case "JsonWebTokenError":
           errorMessage = "The token is malformed or invalid.";
-          errorCode = 403;
+          errorCode = 430;
           break;
         case "NotBeforeError":
           errorMessage = "The token is not yet active.";
-          errorCode = 403;
+          errorCode = 430;
           break;
         default:
           // Log the full error for further debugging
@@ -250,7 +255,7 @@ export function Authenticate(req, res, next) {
       }
       console.log("JWT verify error: ", errorMessage);
       return res
-        .status(499)
+        .status(errorCode)
         .send({ message: "Forbidden", errorMsg: errorMessage });
     }
 
