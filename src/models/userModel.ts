@@ -9,7 +9,7 @@ interface IUser extends Document {
   creationDate: string;
   activationDate?: string;
   activated: boolean;
-  role: number;
+  role: string;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema<IUser>({
   },
   activationDate: { type: String, required: false },
   activated: { type: Boolean, required: true, default: false },
-  role: { type: Number, required: true, default: 0 },
+  role: { type: String, required: true, default: "user" },
 });
 
 const User = mongoose.model<IUser>("Users", userSchema);

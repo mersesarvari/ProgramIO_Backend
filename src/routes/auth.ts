@@ -40,12 +40,9 @@ router.post("/register", async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 });
-
 router.post("/protected", Authenticate, (req, res) => {
   res.json({ message: "Access granted" });
 });
-
-// Login
 router.post("/login", async (req: Request, res: Response) => {
   try {
     // Validating login fields
@@ -120,17 +117,11 @@ router.post("/login", async (req: Request, res: Response) => {
     });
 
     //Retrieving the user login informations
-    res.status(200).json({
-      message: "Login successful",
-      user,
-      //accessToken: accessToken,
-      //refreshToken: validToken.value,
-    });
+    res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 router.post("/token", async (req: Request, res: Response) => {
   //Checking if token exists
   const cookies = req.cookies;
@@ -145,8 +136,8 @@ router.post("/token", async (req: Request, res: Response) => {
     value: refreshToken,
   });
   if (!token) {
-    console.log("Refresh token not found!\n", refreshToken);
-    return res.status(400).json({ message: "No refresh token provided!" });
+    console.log("Invalid refresh token!\n", refreshToken);
+    return res.status(431).json({ message: "Invalid refresh token!" });
   }
   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
     if (err) {

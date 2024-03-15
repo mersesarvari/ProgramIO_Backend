@@ -84,7 +84,7 @@ const HashPassword = async (password: string) => {
   return hashedPassword;
 };
 
-const Register = model<IRegister>("Register", registerSchema);
-const Login = model<ILogin>("Login", loginSchema);
+//const Register = model<IRegister>("Register", registerSchema);
+//const Login = model<ILogin>("Login", loginSchema);
 
-export { HashPassword, Register, Login, ILogin, IRegister };
+export { HashPassword, ILogin, IRegister };
