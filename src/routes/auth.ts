@@ -122,7 +122,7 @@ router.post("/login", async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.post("/token", async (req: Request, res: Response) => {
+router.get("/token", async (req: Request, res: Response) => {
   //Checking if token exists
   const cookies = req.cookies;
   console.log("Cookies:", cookies);
@@ -160,7 +160,7 @@ router.post("/token", async (req: Request, res: Response) => {
       sameSite: "Lax", // adjust as needed for your application
     });
 
-    return res.status(200).json({ accessToken: newToken });
+    return res.status(200).json({ message: "Succesfull token refresh!" });
   });
 });
 router.post("/logout", Authenticate, async (req: Request, res: Response) => {

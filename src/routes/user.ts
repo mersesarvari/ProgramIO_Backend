@@ -33,14 +33,16 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
 // Get ALL
 router.get("/", Authenticate, async (req: Request, res: Response) => {
   try {
+    console.log("User get all api called");
     //Checking roles
     if (req.user.role < RoleRequirement) {
       return res
-        .status(403)
+        .status(401)
         .json({ message: "You dont have the permission to access this!" });
     }
     const objects = await User.find();
-    res.json(objects);
+    console.log(objects);
+    res.send(objects);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
