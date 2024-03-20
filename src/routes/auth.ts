@@ -10,7 +10,6 @@ import {
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-// Register
 router.post("/register", async (req: Request, res: Response) => {
   try {
     const registerValidation = registerValidationSchema.validate(req.body);
@@ -125,7 +124,6 @@ router.post("/login", async (req: Request, res: Response) => {
 router.get("/token", async (req: Request, res: Response) => {
   //Checking if token exists
   const cookies = req.cookies;
-  console.log("Cookies:", cookies);
   const refreshToken = req.cookies["refresh_token"];
   if (refreshToken == null) {
     console.log("No refresh token provided!");
