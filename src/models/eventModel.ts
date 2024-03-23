@@ -1,5 +1,6 @@
 import mongoose, { Document } from "mongoose";
 import Address from "./addressModel";
+import { Double } from "mongodb";
 
 interface IEvent extends Document {
   name: string;
@@ -51,6 +52,7 @@ const eventSchema = new mongoose.Schema<IEvent>({
     required: true,
     default: new Date(),
   },
+  rating: { type: Number, required: true, default: 0.0 },
   //Types. OneTime=0, Reoccuring=1, AllDay=2
   type: { type: String, required: true },
 });

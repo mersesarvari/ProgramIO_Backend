@@ -22,7 +22,6 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
       userId: user._id.toString(),
       address: req.body.address,
       type: req.body.type,
-      rating: -1,
     });
     const newEvent = await event.save();
     // 201 is the create code
