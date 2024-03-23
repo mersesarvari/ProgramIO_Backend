@@ -8,20 +8,21 @@ import { User } from "../models/userModel";
 router.post("/", Authenticate, async (req: Request, res: Response) => {
   try {
     //Getting the user informations:
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(400).json({ message: "User not found" });
+    const user = await User.findOne({ email: req.user.email });
 
+    if (!user) return res.status(400).json({ message: "User not found" });
+    console.log("User:", user._id.toString());
+    //Creating the event
+    console.log("Event:", req.body);
     const event: IEvent = new Event({
       name: req.body.name,
       description: req.body.description,
-      longDescription: req.body.longDescription,
-      creationDate: req.body.creationDate,
-      userId: req.body.userId,
-      address: req.body.address,
+      long_description: req.body.long_description,
       date: req.body.date,
-      eventType: req.body.eventType,
-      rating: req.body.rating,
-      title: req.body.title,
+      userId: user._id.toString(),
+      address: req.body.address,
+      type: req.body.type,
+      rating: -1,
     });
     const newEvent = await event.save();
     // 201 is the create code

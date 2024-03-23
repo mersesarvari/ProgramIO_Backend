@@ -2,55 +2,57 @@ import mongoose, { Document } from "mongoose";
 import Address from "./addressModel";
 
 interface IEvent extends Document {
-  title: string;
   name: string;
   description: string;
-  longDescription: string;
-  creationDate: string;
+  long_description: string;
   userId: string;
   rating: number;
   address: Address;
-  eventType: number;
+  type: String;
   date: Date;
+  create_date: Date;
 }
 
 type Address = {
-  street: string;
+  formatted_address: string;
+  route: string;
+  street_number: string;
   city: string;
   state: string;
-  zipCode: number;
+  postal: number;
   country: string;
   coordinate: {
-    ltd: number;
+    lat: number;
     lng: number;
   };
 };
 
 const eventSchema = new mongoose.Schema<IEvent>({
   name: { type: String, required: true },
-  title: { type: String, required: true },
   description: { type: String, required: true },
-  longDescription: { type: String, required: true },
-  creationDate: {
-    type: String,
-    required: true,
-    default: new Date().toISOString(),
-  },
+  long_description: { type: String, required: true },
   userId: { type: String, required: true },
   address: {
-    street: { type: String, required: true },
+    formatted_address: { type: String, required: true },
+    route: { type: String, required: true },
+    street_number: { type: String, required: true },
     city: { type: String, required: true },
     state: { type: String, required: true },
-    zipCode: { type: Number, required: true },
+    postal: { type: Number, required: true },
     country: { type: String, required: true },
     coordinate: {
-      ltd: { type: Number, required: true },
+      lat: { type: Number, required: true },
       lng: { type: Number, required: true },
     },
   },
   date: { type: Date, required: true },
+  create_date: {
+    type: Date,
+    required: true,
+    default: new Date(),
+  },
   //Types. OneTime=0, Reoccuring=1, AllDay=2
-  eventType: { type: Number, required: true },
+  type: { type: String, required: true },
 });
 
 const Event = mongoose.model<IEvent>("Events", eventSchema);
