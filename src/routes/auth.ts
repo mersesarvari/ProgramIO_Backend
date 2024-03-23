@@ -210,7 +210,6 @@ function CleanUserDataForToken(user: IUser) {
 
 export function Authenticate(req, res, next) {
   //Checking if token exists
-  const cookies = req.cookies;
   const accessToken = req.cookies["access_token"];
   if (accessToken == null) {
     console.log("No access token provided!");

@@ -1,17 +1,27 @@
 import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import { IEvent, Event } from "../models/eventModel";
+import { Authenticate } from "./auth";
+import { User } from "../models/userModel";
 
 // Create
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", Authenticate, async (req: Request, res: Response) => {
   try {
+    //Getting the user informations:
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(400).json({ message: "User not found" });
+
     const event: IEvent = new Event({
       name: req.body.name,
       description: req.body.description,
       longDescription: req.body.longDescription,
       creationDate: req.body.creationDate,
       userId: req.body.userId,
-      addressId: req.body.addressId,
+      address: req.body.address,
+      date: req.body.date,
+      eventType: req.body.eventType,
+      rating: req.body.rating,
+      title: req.body.title,
     });
     const newEvent = await event.save();
     // 201 is the create code
