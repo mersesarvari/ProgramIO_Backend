@@ -158,7 +158,9 @@ router.get("/token", async (req: Request, res: Response) => {
       sameSite: "Lax", // adjust as needed for your application
     });
 
-    return res.status(200).json({ message: "Succesfull token refresh!" });
+    return res
+      .status(200)
+      .json({ message: "Succesfull token refresh!", user: currentUser });
   });
 });
 router.post("/logout", Authenticate, async (req: Request, res: Response) => {
