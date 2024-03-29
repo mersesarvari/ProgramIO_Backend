@@ -12,6 +12,7 @@ interface IEvent extends Document {
   type: String;
   date: Date;
   create_date: Date;
+  images: [{ type: String }];
 }
 
 type Address = {
@@ -52,6 +53,7 @@ const eventSchema = new mongoose.Schema<IEvent>({
     required: true,
     default: new Date(),
   },
+  images: { type: [String] },
   rating: { type: Number, required: true, default: 0.0 },
   //Types. OneTime=0, Reoccuring=1, AllDay=2
   type: { type: String, required: true },

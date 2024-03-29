@@ -3,27 +3,54 @@ const router = express.Router();
 import { IEvent, Event } from "../models/eventModel";
 import { Authenticate } from "./auth";
 import { User } from "../models/userModel";
+import multer from "multer";
 
 // Create
 router.post("/", Authenticate, async (req: Request, res: Response) => {
   try {
     //Getting the user informations:
     const user = await User.findOne({ email: req.user.email });
-
     if (!user) return res.status(400).json({ message: "User not found" });
-    console.log("User:", user._id.toString());
+
     //Creating the event
     console.log("Event:", req.body);
+    // Access form data and uploaded images
+    const { name, description, long_description, date, address, type } =
+      req.body;
+    const images = req.files ? req.files.map((file) => file.filename) : [];
+
     const event: IEvent = new Event({
-      name: req.body.name,
-      description: req.body.description,
-      long_description: req.body.long_description,
-      date: req.body.date,
+      name,
+      description,
+      long_description,
+      date,
       userId: user._id.toString(),
-      address: req.body.address,
-      type: req.body.type,
+      address,
+      type,
+      images,
     });
     const newEvent = await event.save();
+    // 201 is the create code
+    res.status(201).json(newEvent);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+router.post("/new-image", Authenticate, async (req: Request, res: Response) => {
+  try {
+    //Getting the user informations:
+    const user = await User.findOne({ email: req.user.email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+    const images = req.files ? req.files.map((file) => file.filename) : [];
+
+    const currentEvent = await Event.findById(req.params.id);
+    if (!currentEvent)
+      return res.status(404).json({ message: "Event not found" });
+    //Image validation is still nessecary
+    const oldImages = currentEvent.images;
+    oldImages.push(...images);
+    const newEvent = await currentEvent.save();
     // 201 is the create code
     res.status(201).json(newEvent);
   } catch (error) {
@@ -38,6 +65,19 @@ router.get("/", async (req: Request, res: Response) => {
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Get Events By user
+router.get("/my-events", Authenticate, async (req: Request, res: Response) => {
+  try {
+    //Getting the user informations:
+    const user = await User.findOne({ email: req.user.email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+    const events = await Event.find({ userId: user.id });
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ message: "[Server]: " + error.message });
   }
 });
 

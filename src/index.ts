@@ -16,6 +16,7 @@ mongoose.connect(process.env.MONGODB_URL);
 const mongoDB = mongoose.connection;
 mongoDB.on("error", (error) => console.error(error));
 mongoDB.once("open", () => console.error("Connected to database"));
+import multer from "multer";
 
 //Express configuration
 const app = express();
@@ -29,6 +30,20 @@ app.use(function (req, res, next) {
   );
   next();
 });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "files/"); // Adjust path as needed
+  },
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      `${file.fieldname}-${Date.now()}.${file.originalname.split(".").pop()}`
+    );
+  },
+});
+
+const upload = multer({ storage });
 
 app.use(
   cors({
