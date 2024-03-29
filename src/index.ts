@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import Joi from "joi";
 import event from "./routes/event";
 import user from "./routes/user";
 import auth from "./routes/auth";
@@ -31,9 +30,9 @@ app.use(function (req, res, next) {
   next();
 });
 
-const storage = multer.diskStorage({
+export const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "files/"); // Adjust path as needed
+    cb(null, "./files/"); // Adjust path as needed
   },
   filename: (req, file, cb) => {
     cb(

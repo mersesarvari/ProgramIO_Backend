@@ -4,6 +4,9 @@ import { IEvent, Event } from "../models/eventModel";
 import { Authenticate } from "./auth";
 import { User } from "../models/userModel";
 import multer from "multer";
+import storage from "../index";
+
+const upload = multer({ storage });
 
 // Create
 router.post("/", Authenticate, async (req: Request, res: Response) => {
@@ -37,26 +40,36 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
   }
 });
 
-router.post("/new-image", Authenticate, async (req: Request, res: Response) => {
-  try {
-    //Getting the user informations:
-    const user = await User.findOne({ email: req.user.email });
-    if (!user) return res.status(400).json({ message: "User not found" });
-    const images = req.files ? req.files.map((file) => file.filename) : [];
+router.post(
+  "/new-image",
+  Authenticate,
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+    try {
+      console.log("event/new-image endpoint called");
+      //Getting the user informations:
+      const user = await User.findOne({ email: req.user.email });
+      if (!user) return res.status(400).json({ message: "User not found" });
 
-    const currentEvent = await Event.findById(req.params.id);
-    if (!currentEvent)
-      return res.status(404).json({ message: "Event not found" });
-    //Image validation is still nessecary
-    const oldImages = currentEvent.images;
-    oldImages.push(...images);
-    const newEvent = await currentEvent.save();
-    // 201 is the create code
-    res.status(201).json(newEvent);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+      // Extracting image and ID from the request
+      console.log("File:", req.file);
+      const image = req.file ? req.file : null;
+      const eventId = req.body.id;
+
+      const currentEvent = await Event.findById(eventId);
+      if (!currentEvent)
+        return res.status(404).json({ message: "Event not found" });
+      //Image validation is still nessecary
+      const oldImages = currentEvent.images;
+      oldImages.push(image.originalname);
+      const newEvent = await currentEvent.save();
+      // 201 is the create code
+      res.status(201).json(newEvent);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   }
-});
+);
 
 // Get ALL
 router.get("/", async (req: Request, res: Response) => {
