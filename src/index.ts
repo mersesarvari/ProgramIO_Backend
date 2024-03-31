@@ -3,7 +3,6 @@ import cors from "cors";
 import event from "./routes/event";
 import user from "./routes/user";
 import auth from "./routes/auth";
-import address from "./routes/address";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 
@@ -57,8 +56,6 @@ app.use(express.json());
 app.use("/event", event);
 app.use("/user", user);
 app.use("/auth", auth);
-app.use("/address", address);
-
 app.listen(process.env.PORT, () => {
   console.log(`Server running on ${process.env.URL}:${process.env.PORT}`);
 });

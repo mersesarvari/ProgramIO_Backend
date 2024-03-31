@@ -44,6 +44,7 @@ router.post("/protected", Authenticate, (req, res) => {
 });
 router.post("/login", async (req: Request, res: Response) => {
   try {
+    console.log("Login endpoint called");
     // Validating login fields
     const loginValidation = loginValidationSchema.validate(req.body);
     if (loginValidation.error) {
@@ -97,9 +98,6 @@ router.post("/login", async (req: Request, res: Response) => {
         "No token found in the database, Generating new refresh token"
       );
     }
-
-    // Set the expiration date to a far-future date (e.g., 31 Dec 9999)
-    const farFutureDate = new Date("9999-12-31");
 
     // Setting access token as a cookie
     res.cookie("access_token", accessToken, {

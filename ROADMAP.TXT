@@ -1,1 +1,3 @@
 Integrating express validator: https://developer.mozilla.org/en-US/docs/Learn/Server-side/Express_Nodejs/forms
+
+Fixing file upload. File's are not saved now. Add file processing. Quality decrease and requirements, Extension, size, resolution. Change file extension to bebp

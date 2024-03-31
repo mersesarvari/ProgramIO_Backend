@@ -1,5 +1,5 @@
 import mongoose, { Document } from "mongoose";
-import Address from "./addressModel";
+import { Address } from "./addressModel";
 import { Double } from "mongodb";
 
 interface IEvent extends Document {
@@ -15,20 +15,6 @@ interface IEvent extends Document {
   images: [{ type: String }];
 }
 
-type Address = {
-  formatted_address: string;
-  route: string;
-  street_number: string;
-  city: string;
-  state: string;
-  postal: number;
-  country: string;
-  coordinate: {
-    lat: number;
-    lng: number;
-  };
-};
-
 const eventSchema = new mongoose.Schema<IEvent>({
   name: { type: String, required: true },
   description: { type: String, required: true },
@@ -39,7 +25,7 @@ const eventSchema = new mongoose.Schema<IEvent>({
     route: { type: String, required: true },
     street_number: { type: String, required: true },
     city: { type: String, required: true },
-    state: { type: String, required: true },
+    state: { type: String },
     postal: { type: Number, required: true },
     country: { type: String, required: true },
     coordinate: {
