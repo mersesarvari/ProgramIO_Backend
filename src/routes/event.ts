@@ -111,7 +111,16 @@ router.post(
         return res.status(404).json({ message: "Event not found" });
       console.log("Image.webpath:", req.webpName);
       const oldImages = currentEvent.images;
-      oldImages.push(req.webpName);
+      const newImage = {
+        name: req.webpName,
+        url: req.webpPath,
+        extension: ".webp",
+        dateModified: new Date(),
+        //TODO: changing from none if the image is set a a cover
+        type: "none",
+      };
+
+      oldImages.push(newImage);
       await currentEvent.save();
       res.status(201).json({ message: "Image uploaded succesfully" });
     } catch (error) {

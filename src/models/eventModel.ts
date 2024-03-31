@@ -1,6 +1,6 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 import { Address } from "./addressModel";
-import { Double } from "mongodb";
+import { IEventImage, eventImageSchema } from "./imageEventModel";
 
 interface IEvent extends Document {
   name: string;
@@ -12,7 +12,7 @@ interface IEvent extends Document {
   type: String;
   date: Date;
   create_date: Date;
-  images: [{ type: String }];
+  images: IEventImage[];
 }
 
 const eventSchema = new mongoose.Schema<IEvent>({
@@ -39,7 +39,7 @@ const eventSchema = new mongoose.Schema<IEvent>({
     required: true,
     default: new Date(),
   },
-  images: { type: [String] },
+  images: { type: [eventImageSchema], default: [] },
   rating: { type: Number, required: true, default: 0.0 },
   //Types. OneTime=0, Reoccuring=1, AllDay=2
   type: { type: String, required: true },
