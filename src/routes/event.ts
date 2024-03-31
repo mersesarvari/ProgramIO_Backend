@@ -4,8 +4,18 @@ import { IEvent, Event } from "../models/eventModel";
 import { Authenticate } from "./auth";
 import { User } from "../models/userModel";
 import multer from "multer";
-import storage from "../index";
+import fs from "fs";
+import path from "path";
 
+// Multer configuration
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "src/uploads"); // Destination directory
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`); // Keep the original filename
+  },
+});
 const upload = multer({ storage });
 
 // Create
@@ -42,17 +52,18 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
 
 router.post(
   "/new-image",
-  Authenticate,
-  upload.single("image"),
+  upload.single("file"),
   async (req: Request, res: Response) => {
-    try {
+    console.log(req.file);
+    //res.send({ message: "File uploaded succesfully" });
+    /* try {
       console.log("event/new-image endpoint called");
       //Getting the user informations:
       const user = await User.findOne({ email: req.user.email });
       if (!user) return res.status(400).json({ message: "User not found" });
-
+      //console.log("Request:", req);
       // Extracting image and ID from the request
-      console.log("File:", req.file);
+      //console.log("File:", req.file);
       const image = req.file ? req.file : null;
       const eventId = req.body.id;
 
@@ -67,6 +78,20 @@ router.post(
       res.status(201).json(newEvent);
     } catch (error) {
       res.status(400).json({ message: error.message });
+    } */
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded." });
+      }
+
+      const filePath = path.join("/src/uploads", req.file.originalname);
+
+      // At this point, the file has been successfully uploaded
+      // You can do further processing here, like saving the file path to a database, etc.
+      res.status(200).json({ message: "File uploaded successfully", filePath });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 );
