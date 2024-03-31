@@ -36,8 +36,8 @@ const convertToWebP = (req, res, next) => {
   if (!req.file) {
     return next();
   }
-
-  const imagePath = path.join("src/uploads", `${guid()}.webp`);
+  const imagename = guid();
+  const imagePath = path.join("src/uploads", `${imagename}.webp`);
 
   // Create a readable stream from the file buffer
   const imageStream = sharp(req.file.buffer)
@@ -48,6 +48,7 @@ const convertToWebP = (req, res, next) => {
         return next(err);
       }
       req.webpPath = imagePath;
+      req.webpName = `${imagename}.webp`;
       next();
     });
 };
@@ -108,10 +109,10 @@ router.post(
       const currentEvent = await Event.findById(eventId);
       if (!currentEvent)
         return res.status(404).json({ message: "Event not found" });
-      console.log("Image.webpath:", req.webpPath);
-      /* const oldImages = currentEvent.images;
-      oldImages.push(image.originalname);
-      const newEvent = await currentEvent.save(); */
+      console.log("Image.webpath:", req.webpName);
+      const oldImages = currentEvent.images;
+      oldImages.push(req.webpName);
+      await currentEvent.save();
       res.status(201).json({ message: "Image uploaded succesfully" });
     } catch (error) {
       console.error(error);
