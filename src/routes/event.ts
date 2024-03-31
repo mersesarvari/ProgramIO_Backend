@@ -6,17 +6,51 @@ import { User } from "../models/userModel";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { v4 as guid } from "uuid";
+import sharp from "sharp";
 
+const storage = multer.memoryStorage(); // Store file in memory as a buffer
 // Multer configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "src/uploads"); // Destination directory
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Check if the uploaded file's MIME type is one of the allowed image types
+    if (
+      file.mimetype.startsWith("image/") &&
+      ["jpg", "jpeg", "png", "svg", "webp"].includes(
+        file.originalname.split(".").pop().toLowerCase()
+      )
+    ) {
+      cb(null, true); // Accept the file
+    } else {
+      cb(new Error("Only JPG, JPEG, PNG, SVG, and WebP images are allowed")); // Reject the file
+    }
   },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`); // Keep the original filename
+  limits: {
+    fileSize: 3 * 1024 * 1024, // 10 MB (adjust as needed)
   },
 });
-const upload = multer({ storage });
+
+// Middleware to convert uploaded image to WebP format
+const convertToWebP = (req, res, next) => {
+  if (!req.file) {
+    return next();
+  }
+
+  const imagePath = path.join("src/uploads", `${guid()}.webp`);
+
+  // Create a readable stream from the file buffer
+  const imageStream = sharp(req.file.buffer)
+    .toFormat("webp")
+    .webp({ quality: 40 })
+    .toFile(imagePath, (err, info) => {
+      if (err) {
+        return next(err);
+      }
+      req.webpPath = imagePath;
+      next();
+    });
+};
 
 // Create
 router.post("/", Authenticate, async (req: Request, res: Response) => {
@@ -52,33 +86,10 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
 
 router.post(
   "/new-image",
+  Authenticate,
   upload.single("file"),
+  convertToWebP,
   async (req: Request, res: Response) => {
-    console.log(req.file);
-    //res.send({ message: "File uploaded succesfully" });
-    /* try {
-      console.log("event/new-image endpoint called");
-      //Getting the user informations:
-      const user = await User.findOne({ email: req.user.email });
-      if (!user) return res.status(400).json({ message: "User not found" });
-      //console.log("Request:", req);
-      // Extracting image and ID from the request
-      //console.log("File:", req.file);
-      const image = req.file ? req.file : null;
-      const eventId = req.body.id;
-
-      const currentEvent = await Event.findById(eventId);
-      if (!currentEvent)
-        return res.status(404).json({ message: "Event not found" });
-      //Image validation is still nessecary
-      const oldImages = currentEvent.images;
-      oldImages.push(image.originalname);
-      const newEvent = await currentEvent.save();
-      // 201 is the create code
-      res.status(201).json(newEvent);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    } */
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded." });
@@ -88,7 +99,20 @@ router.post(
 
       // At this point, the file has been successfully uploaded
       // You can do further processing here, like saving the file path to a database, etc.
-      res.status(200).json({ message: "File uploaded successfully", filePath });
+      //res.status(200).json({ message: "File uploaded successfully", filePath });
+      //Getting the user informations:
+      const user = await User.findOne({ email: req.user.email });
+      if (!user) return res.status(400).json({ message: "User not found" });
+      const eventId = req.body.id;
+
+      const currentEvent = await Event.findById(eventId);
+      if (!currentEvent)
+        return res.status(404).json({ message: "Event not found" });
+      console.log("Image.webpath:", req.webpPath);
+      /* const oldImages = currentEvent.images;
+      oldImages.push(image.originalname);
+      const newEvent = await currentEvent.save(); */
+      res.status(201).json({ message: "Image uploaded succesfully" });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });

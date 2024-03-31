@@ -119,7 +119,7 @@ router.post("/login", async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.get("/token", async (req: Request, res: Response) => {
+router.post("/token", async (req: Request, res: Response) => {
   //Checking if token exists
   const cookies = req.cookies;
   const refreshToken = req.cookies["refresh_token"];
