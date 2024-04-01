@@ -3,8 +3,9 @@ const router = express.Router();
 import { User, IUser } from "../models/userModel";
 import { HashPassword } from "../models/authModel";
 import { Authenticate } from "../middlewares/authMW";
-import { convertToWebP, upload } from "../middlewares/fileMW";
+import { convertToWebP, upload } from "../middlewares/imageMW";
 import { Event } from "../models/eventModel";
+import { CheckEventPermission } from "../middlewares/eventMW";
 const fs = require("fs");
 const path = require("path");
 
@@ -13,8 +14,9 @@ const RoleRequirement = 3;
 
 //CREATE-EVENT-IMAGE
 router.post(
-  "/event-image",
+  "/event/:eventId",
   Authenticate,
+  CheckEventPermission,
   upload.single("file"),
   convertToWebP,
   async (req: Request, res: Response) => {
@@ -22,7 +24,6 @@ router.post(
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded." });
       }
-      // At this point, the file has been successfully uploaded
       // You can do further processing here, like saving the file path to a database, etc.
       const user = await User.findOne({ email: req.user.email });
       if (!user) return res.status(400).json({ message: "User not found" });
@@ -31,7 +32,6 @@ router.post(
       const currentEvent = await Event.findById(eventId);
       if (!currentEvent)
         return res.status(404).json({ message: "Event not found" });
-      console.log("Image.webpath:", req.webpName);
       const oldImages = currentEvent.images;
       const newImage = {
         name: req.webpName,
@@ -51,11 +51,12 @@ router.post(
     }
   }
 );
+// TODO: removing authenticate from here Probably
 // Get all images for a specific event
-router.get("/:id", Authenticate, async (req, res) => {
+router.get("/:eventId", Authenticate, async (req, res) => {
   console.log("Get all images endpoint called ");
   try {
-    const eventId = req.params.id;
+    const eventId = req.params.eventId;
 
     // Find the event by ID
     const event = await Event.findById(eventId);
@@ -63,32 +64,25 @@ router.get("/:id", Authenticate, async (req, res) => {
 
     // Serve all images associated with the event
     const images = event.images;
-    const test = path.join(__dirname, "..", "..");
-    console.log("Dirname:", test);
     const imagePaths = images.map((image) =>
       path.join(__dirname, "..", "..", image.url)
     ); // Assuming images are stored in 'src/uploads' directory
     console.log("path:", imagePaths);
-    // Check if each image file exists and send them
-    const imagePromises = imagePaths.map(async (imagePath) => {
+    // Check if each image file exists and read them
+    const imageDataPromises = imagePaths.map(async (imagePath, index) => {
       if (fs.existsSync(imagePath)) {
-        return fs.promises.readFile(imagePath);
+        const imageBuffer = await fs.promises.readFile(imagePath);
+        return {
+          name: images[index].name,
+          imageData: imageBuffer.toString("base64"),
+        };
       } else {
-        return null;
+        return { name: images[index].name, imageData: null };
       }
     });
 
     // Wait for all image reading promises to resolve
-    const imageBuffers = await Promise.all(imagePromises);
-
-    // Send image data as base64 strings
-    const imageData = imageBuffers.map((imageBuffer) => {
-      if (imageBuffer) {
-        return imageBuffer.toString("base64");
-      } else {
-        return null;
-      }
-    });
+    const imageData = await Promise.all(imageDataPromises);
 
     res.json(imageData);
   } catch (error) {
@@ -97,44 +91,52 @@ router.get("/:id", Authenticate, async (req, res) => {
 });
 
 // Delete an image for a specific event
-router.delete("/:id", Authenticate, async (req, res) => {
-  try {
-    const eventId = req.params.eventId;
-    const imageName = req.params.imageName;
+router.delete(
+  "/:eventId",
+  Authenticate,
+  CheckEventPermission,
+  async (req, res) => {
+    try {
+      const eventId = req.params.eventId;
+      const imageName = req.body.imageName;
+      console.log("EventId for deleteImage:", eventId);
+      console.log("ImageName:", imageName);
+      // Find the event by ID
+      const event = await Event.findById(eventId);
+      if (!event) return res.status(404).json({ message: "Event not found" });
 
-    // Find the event by ID
-    const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+      // Find the index of the image to delete
+      const imageIndex = event.images.findIndex(
+        (img) => img.name === imageName
+      );
+      console.log("Image index:", imageIndex);
+      if (imageIndex === -1)
+        return res.status(404).json({ message: "Image not found" });
 
-    // Find the index of the image to delete
-    const imageIndex = event.images.findIndex((img) => img.name === imageName);
-    if (imageIndex === -1)
-      return res.status(404).json({ message: "Image not found" });
+      // Construct the file path of the image to delete
+      const imagePath = path.join(
+        __dirname,
+        "..",
+        "..",
+        event.images[imageIndex].url
+      );
 
-    // Remove the image from the images array
-    event.images.splice(imageIndex, 1);
+      // Check if the image file exists and delete it
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
 
-    // Save the updated event
-    await event.save();
+      // Remove the image from the images array
+      event.images.splice(imageIndex, 1);
 
-    // Construct the file path of the image to delete
-    const imagePath = path.join(
-      __dirname,
-      "..",
-      "..",
-      event.images[imageIndex].url
-    );
-
-    // Check if the image file exists and delete it
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+      // Save the updated event
+      await event.save();
+      res.json({ message: "Image deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
     }
-
-    res.json({ message: "Image deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 module.exports = router;
 

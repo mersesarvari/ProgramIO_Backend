@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import { IEvent, Event } from "../models/eventModel";
 import { User } from "../models/userModel";
-import { convertToWebP, upload } from "../middlewares/fileMW";
+import { convertToWebP, upload } from "../middlewares/imageMW";
 import { Authenticate } from "../middlewares/authMW";
 import { getEventById } from "../middlewares/eventMW";
 
@@ -42,6 +42,7 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
 router.get("/", async (req: Request, res: Response) => {
   try {
     const events = await Event.find();
+    console.log("EVENT - GET ALL:", events.length);
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -62,12 +63,12 @@ router.get("/my-events", Authenticate, async (req: Request, res: Response) => {
 });
 
 // GET ONE
-router.get("/:id", getEventById, async (req: Request, res: Response) => {
+router.get("/:eventId", getEventById, async (req: Request, res: Response) => {
   res.send(res.locals.event);
 });
 
 // UPDATE
-router.patch("/:id", getEventById, async (req: Request, res: Response) => {
+router.patch("/:eventId", getEventById, async (req: Request, res: Response) => {
   try {
     if (req.body.name !== null) {
       res.locals.event.name = req.body.name;
@@ -95,13 +96,17 @@ router.patch("/:id", getEventById, async (req: Request, res: Response) => {
 });
 
 // DELETE
-router.delete("/:id", getEventById, async (req: Request, res: Response) => {
-  try {
-    await res.locals.event.deleteOne();
-    res.json({ message: "Deleted event!" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+router.delete(
+  "/:eventId",
+  getEventById,
+  async (req: Request, res: Response) => {
+    try {
+      await res.locals.event.deleteOne();
+      res.json({ message: "Deleted event!" });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 export default router;
