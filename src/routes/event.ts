@@ -1,57 +1,10 @@
 import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import { IEvent, Event } from "../models/eventModel";
-import { Authenticate } from "./auth";
 import { User } from "../models/userModel";
-import multer from "multer";
-import fs from "fs";
-import path from "path";
-import { v4 as guid } from "uuid";
-import sharp from "sharp";
-
-const storage = multer.memoryStorage(); // Store file in memory as a buffer
-// Multer configuration
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    // Check if the uploaded file's MIME type is one of the allowed image types
-    if (
-      file.mimetype.startsWith("image/") &&
-      ["jpg", "jpeg", "png", "svg", "webp"].includes(
-        file.originalname.split(".").pop().toLowerCase()
-      )
-    ) {
-      cb(null, true); // Accept the file
-    } else {
-      cb(new Error("Only JPG, JPEG, PNG, SVG, and WebP images are allowed")); // Reject the file
-    }
-  },
-  limits: {
-    fileSize: 3 * 1024 * 1024, // 10 MB (adjust as needed)
-  },
-});
-
-// Middleware to convert uploaded image to WebP format
-const convertToWebP = (req, res, next) => {
-  if (!req.file) {
-    return next();
-  }
-  const imagename = guid();
-  const imagePath = path.join("src/uploads", `${imagename}.webp`);
-
-  // Create a readable stream from the file buffer
-  const imageStream = sharp(req.file.buffer)
-    .toFormat("webp")
-    .webp({ quality: 40 })
-    .toFile(imagePath, (err, info) => {
-      if (err) {
-        return next(err);
-      }
-      req.webpPath = imagePath;
-      req.webpName = `${imagename}.webp`;
-      next();
-    });
-};
+import { convertToWebP, upload } from "../middlewares/fileMW";
+import { Authenticate } from "../middlewares/authMW";
+import { getEventById } from "../middlewares/eventMW";
 
 // Create
 router.post("/", Authenticate, async (req: Request, res: Response) => {
@@ -85,51 +38,6 @@ router.post("/", Authenticate, async (req: Request, res: Response) => {
   }
 });
 
-router.post(
-  "/new-image",
-  Authenticate,
-  upload.single("file"),
-  convertToWebP,
-  async (req: Request, res: Response) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded." });
-      }
-
-      const filePath = path.join("/src/uploads", req.file.originalname);
-
-      // At this point, the file has been successfully uploaded
-      // You can do further processing here, like saving the file path to a database, etc.
-      //res.status(200).json({ message: "File uploaded successfully", filePath });
-      //Getting the user informations:
-      const user = await User.findOne({ email: req.user.email });
-      if (!user) return res.status(400).json({ message: "User not found" });
-      const eventId = req.body.id;
-
-      const currentEvent = await Event.findById(eventId);
-      if (!currentEvent)
-        return res.status(404).json({ message: "Event not found" });
-      console.log("Image.webpath:", req.webpName);
-      const oldImages = currentEvent.images;
-      const newImage = {
-        name: req.webpName,
-        url: req.webpPath,
-        extension: ".webp",
-        dateModified: new Date(),
-        //TODO: changing from none if the image is set a a cover
-        type: "none",
-      };
-
-      oldImages.push(newImage);
-      await currentEvent.save();
-      res.status(201).json({ message: "Image uploaded succesfully" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
-);
-
 // Get ALL
 router.get("/", async (req: Request, res: Response) => {
   try {
@@ -154,12 +62,12 @@ router.get("/my-events", Authenticate, async (req: Request, res: Response) => {
 });
 
 // GET ONE
-router.get("/:id", getEvent, async (req: Request, res: Response) => {
+router.get("/:id", getEventById, async (req: Request, res: Response) => {
   res.send(res.locals.event);
 });
 
 // UPDATE
-router.patch("/:id", getEvent, async (req: Request, res: Response) => {
+router.patch("/:id", getEventById, async (req: Request, res: Response) => {
   try {
     if (req.body.name !== null) {
       res.locals.event.name = req.body.name;
@@ -187,7 +95,7 @@ router.patch("/:id", getEvent, async (req: Request, res: Response) => {
 });
 
 // DELETE
-router.delete("/:id", getEvent, async (req: Request, res: Response) => {
+router.delete("/:id", getEventById, async (req: Request, res: Response) => {
   try {
     await res.locals.event.deleteOne();
     res.json({ message: "Deleted event!" });
@@ -195,18 +103,5 @@ router.delete("/:id", getEvent, async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-async function getEvent(req: Request, res: Response, next: NextFunction) {
-  try {
-    const event = await Event.findById(req.params.id);
-    if (event === null) {
-      return res.status(404).json({ message: "Cannot find event" });
-    }
-    res.locals.event = event;
-    next();
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-}
 
 export default router;

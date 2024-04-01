@@ -2,8 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 const router = express.Router();
 import { User, IUser } from "../models/userModel";
 import { HashPassword } from "../models/authModel";
-import { Authenticate, CheckRoleRequirement } from "./auth";
-import bcrypt from "bcrypt";
+import { Authenticate } from "../middlewares/authMW";
 
 const RoleRequirement = 3;
 

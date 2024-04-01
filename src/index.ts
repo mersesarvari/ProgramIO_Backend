@@ -3,6 +3,7 @@ import cors from "cors";
 import event from "./routes/event";
 import user from "./routes/user";
 import auth from "./routes/auth";
+import image from "./routes/image";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 
@@ -27,18 +28,7 @@ app.use(function (req, res, next) {
   );
   next();
 });
-import multer from "multer";
-export const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    console.log("Multer called");
-    cb(null, "../files"); // Adjust path as needed
-  },
-  filename: (req, file, cb) => {
-    console.log("Multer got called");
-    console.log("Multer:", req.file);
-    cb(null, `${Date.now()}-${req.file.originalname}`);
-  },
-});
+
 app.use(
   cors({
     origin: ["http://localhost:5173"], // Specify the allowed origin
@@ -52,6 +42,7 @@ app.use(express.json());
 app.use("/event", event);
 app.use("/user", user);
 app.use("/auth", auth);
+app.use("/image", image);
 app.listen(process.env.PORT, () => {
   console.log(`Server running on ${process.env.URL}:${process.env.PORT}`);
 });
