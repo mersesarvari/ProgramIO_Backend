@@ -28,10 +28,8 @@ export async function CheckEventPermission(
   next: NextFunction
 ) {
   try {
-    console.log("CheckEventPermission");
     // Check if the event exists
     const eventId = req.params.eventId;
-    console.log("Event:", req.params);
     if (!eventId) {
       return res
         .status(404)
@@ -41,7 +39,6 @@ export async function CheckEventPermission(
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
-    console.log("UserId:", req.user);
     // Check if the user has permission to delete the event
     if (event.userId.toString() !== req.user.id.toString()) {
       return res

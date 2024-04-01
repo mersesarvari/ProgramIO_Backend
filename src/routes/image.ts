@@ -67,7 +67,6 @@ router.get("/:eventId", Authenticate, async (req, res) => {
     const imagePaths = images.map((image) =>
       path.join(__dirname, "..", "..", image.url)
     ); // Assuming images are stored in 'src/uploads' directory
-    console.log("path:", imagePaths);
     // Check if each image file exists and read them
     const imageDataPromises = imagePaths.map(async (imagePath, index) => {
       if (fs.existsSync(imagePath)) {
@@ -111,7 +110,9 @@ router.delete(
       );
       console.log("Image index:", imageIndex);
       if (imageIndex === -1)
-        return res.status(404).json({ message: "Image not found" });
+        return res
+          .status(404)
+          .json({ message: "Image not found in the database" });
 
       // Construct the file path of the image to delete
       const imagePath = path.join(
